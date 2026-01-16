@@ -1,0 +1,8 @@
+venv
+metrics_activities.csv
+only_metrics.csv
+only_activities.csv
+
+# Python cache
+__pycache__/
+*.py[cod]
