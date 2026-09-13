@@ -1,6 +1,6 @@
 # Garmin Data Exporter
 
-This app lets you download health and activity data from your Garmin device and save it into a CSV file.
+Garmin gives you a lot of data, but the useful insights are often hidden across different metrics and time periods. This app lets you download health and activity data from your Garmin device and save it into a CSV file enabling a consolidated data analysis via LLMs.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
@@ -33,7 +33,7 @@ This app lets you download health and activity data from your Garmin device and 
 #### 1. Clone this repository
 
 ```bash
-git clone https://github.com/transientperpetual/garmin-to-csv.git
+git clone https://github.com/jangid-ankit/garmin-csv.git
 cd garmin-to-csv
 ``` 
 
