@@ -63,16 +63,4 @@ The exported CSV can be fed directly into an LLM for descriptive analysis and in
 
 ## Insights from my data
 
-Analysis of ~13 months of exported Garmin data (390 days, 138 activities) surfaced a few statistically solid patterns:
-
-- **Training load, not activity type, drives next-day recovery.** Sessions above ~90 training load show a clear next-day cost across 6 independent metrics: sleep score (r=-0.30, p=0.003), Body Battery (r=-0.41, p<0.001), and RHR (r=+0.45, p<0.001) all move in the expected direction. Below that load, recovery is flat regardless of how often you train.
-
-- **Evening training load matters more than morning.** High-load sessions after 5pm correlate with worse next-night sleep (r=-0.38, p=0.02); the same load in the morning shows no significant effect (r=-0.17, p=0.19). Clock time alone (morning vs. evening) has no effect,  it's intensity *combined with* timing.
-
-- **Activity type mostly reflects load, not the sport itself.** Cricket and cycling show the worst next-day recovery, but that's because they're your highest-load activities (long matches/rides), not something specific to those sports. Running is the exception - moderate-high load but strong recovery, likely because it's almost always a morning session.
-
-- **Evening table tennis is the one evening activity that doesn't cost sleep, it may even help.** Nearly all table tennis sessions happen 6-7:30pm, and next-day sleep score after those sessions (72.3) beats every other evening activity, including rest-adjacent ones like light strength work. All other evening activities combined average 64.8. Low physiological load plus a genuine mental "switch-off" is the likely explanation.
-
-
-- **Sleep quantity is the strongest lever in the whole dataset.** 25% of nights are under 6 hours, and short sleep correlates with next-day stress more strongly than anything else tracked (r=-0.45).
-
+<img width="1904" height="826" alt="garmin_insights (1)" src="https://github.com/user-attachments/assets/bcccee3b-6b0b-43be-b2ce-461d720e5624" />
