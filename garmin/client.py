@@ -83,8 +83,9 @@ class GarminClient:
         Fetch metrics across a date range concurrently using ThreadPoolExecutor.
         Displays an in-place progress bar (tqdm) and returns sorted daily metrics.
         """
+
         if start_date > end_date:
-            print(f"Start date {start_date} is after end date {end_date}.")
+            print(f"Start date {start_date} is after end date {end_date}.") 
             return []
 
         days_count = (end_date - start_date).days + 1

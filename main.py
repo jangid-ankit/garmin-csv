@@ -60,6 +60,8 @@ def run_export(
         else:
             start_date = start_date or client.registered_date
 
+        # Custom start_date is assigned below (to avoid my personal device registration date discrepancy, for normal usage comment out the next line)
+        start_date = datetime.date(2024,12,23)
         daily_metrics = client.fetch_metrics_range(start_date, end_date, max_workers=workers)
         exporter = CSVExporter(output_path)
         exporter.export(daily_metrics, append=append)
@@ -68,6 +70,9 @@ def run_export(
         print(f"\n--- Fetching All Data (Metrics + Activities) ---")
         start_date = start_date or client.registered_date
 
+        # Custom start_date is assigned below (to avoid my personal device registration date discrepancy, for normal usage comment out the next line)
+        start_date = datetime.date(2024,12,23)
+        
         daily_metrics = client.fetch_metrics_range(start_date, end_date, max_workers=workers)
         raw_activities = client.fetch_raw_activities()
         activities = transform_activities(raw_activities)
