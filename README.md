@@ -4,23 +4,15 @@ Garmin gives you a lot of data, but the useful insights are often hidden across 
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
-> **⚠️ Important Notice (March 2026)**  
-> Garmin changed their authentication system and added Cloudflare TLS fingerprinting.  
-> The library this project depends on — [`garth`](https://github.com/matin/garth) — is now **officially deprecated** and no longer works for new logins.  
->  
-> **This project currently does not work** for fresh authentication.  
->  
-> For a working alternative that bypasses the TLS fingerprinting restriction, see:  
-> → [**etweisberg/garmin-connect-mcp**](https://github.com/etweisberg/garmin-connect-mcp)  
-> (routes API calls through a headless Playwright browser)
-
 <img width="4167" height="1766" alt="dfd" src="https://github.com/user-attachments/assets/a8872c6e-e7a6-4954-b23a-d0e5590c2bd1" />
 
 ## Features
-- Connects to your Garmin account.
-- Fetches daily metrics including steps, calories, sleep, HRV, stress, and more.
-- Exports the data into a CSV file (`garmin_data.csv`).
-- Option to append new metrics to an existing file or start fresh.
+- **Garmin Connect Integration**: Connects to your Garmin account using session caching.
+- **Deep Health Metrics**: Daily steps, calories, Body Battery, resting HR, stress levels, sleep stages (Deep, REM, Light), and overnight HRV baselines.
+- **Activity Tracking**: Detailed activity metrics, zone times, training load, and automatic time-of-day categorization (Morning, Afternoon, Evening, Night).
+- **Fast Concurrent Fetching**: Multi-threaded querying fetches months of daily data in seconds.
+- **Interactive Menu & CLI**: Run without arguments for an interactive menu, or use command-line flags.
+- **Clean Export**: Saves structured data cleanly into `output/` with support for incremental appending.
 
 ## Requirements
 - Python 3.8+
@@ -53,11 +45,31 @@ pip install -r requirements.txt
 
 #### 4. Run the exporter
 
+**Interactive Mode:**
+Simply run without arguments to get an interactive menu:
 ```bash
 python main.py
 ```
 
-The exported CSV can be fed directly into an LLM for descriptive analysis and insight generation.
+**CLI Flags:**
+```bash
+# Export all daily metrics merged with primary activities
+python main.py --mode all
+
+# Export activities only
+python main.py --mode activities
+
+# Export health metrics for the past 30 days
+python main.py --mode metrics --days 30
+
+# Incrementally append latest metrics to existing CSV
+python main.py --mode metrics --append
+
+# Custom date range and output file
+python main.py --mode metrics --start-date 2025-01-01 --end-date 2025-06-30 --output my_data.csv
+```
+
+The exported CSV can be fed directly into an LLM or analysis script for descriptive analysis and insight generation.
 
 <br>
 

@@ -11,3 +11,4 @@ requests-oauthlib==2.0.0
 typing-inspection==0.4.1
 typing_extensions==4.15.0
 urllib3==2.5.0
+tqdm>=4.66.0
