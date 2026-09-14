@@ -188,3 +188,4 @@ def merge_metrics_and_activities(
             row.setdefault(fn, "")
 
     return merged_data
+

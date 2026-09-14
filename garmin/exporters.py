@@ -76,3 +76,4 @@ def get_last_recorded_date(filepath: str) -> Optional[datetime.date]:
     except Exception as e:
         print(f"Warning: Could not read previous date from {filepath}: {e}")
         return None
+

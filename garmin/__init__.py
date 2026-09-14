@@ -21,3 +21,4 @@ __all__ = [
     "deduplicate_activities_by_day",
     "merge_metrics_and_activities",
 ]
+

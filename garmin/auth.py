@@ -35,3 +35,4 @@ def authenticate(session_path="~/.garth") -> bool:
             "Note: If Garmin requires Cloudflare TLS fingerprinting or MFA, "
             "ensure you have a valid saved Garth session."
         ) from e
+
