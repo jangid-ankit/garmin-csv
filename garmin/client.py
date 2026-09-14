@@ -1,13 +1,9 @@
 import concurrent.futures
 import datetime
-import sys
 from typing import Any, Callable, Dict, List, Optional
-import garth
 
-try:
-    from tqdm import tqdm
-except ImportError:
-    tqdm = None
+import garth
+from tqdm import tqdm
 
 from garmin.transformers import transform_daily_metrics
 
@@ -98,37 +94,7 @@ class GarminClient:
 
         results: Dict[datetime.date, Dict[str, Any]] = {}
 
-        if tqdm is not None:
-            # Rich in-place progress bar with rate and ETA tracking
-            with tqdm(total=days_count, desc="Fetching metrics", unit="day", dynamic_ncols=True) as pbar:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    future_to_date = {executor.submit(self._fetch_single_day, d): d for d in date_list}
-                    for future in concurrent.futures.as_completed(future_to_date):
-                        d = future_to_date[future]
-                        try:
-                            record = future.result()
-                            if record:
-                                results[d] = record
-                        except Exception as e:
-                            tqdm.write(f"Warning: Failed fetching data for {d}: {e}")
-                        pbar.update(1)
-        else:
-            # Zero-dependency carriage-return fallback progress bar
-            completed = 0
-
-            def _print_progress(curr: int, total: int):
-                bar_len = 25
-                pct = (curr / total) * 100 if total else 100
-                filled = int(bar_len * curr // total) if total else bar_len
-                bar = "█" * filled + "░" * (bar_len - filled)
-                sys.stdout.write(f"\rProgress: [{bar}] {pct:5.1f}% ({curr}/{total} days)")
-                sys.stdout.flush()
-                if curr >= total:
-                    sys.stdout.write("\n")
-                    sys.stdout.flush()
-
-            _print_progress(0, days_count)
-
+        with tqdm(total=days_count, desc="Fetching metrics", unit="day", dynamic_ncols=True) as pbar:
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_date = {executor.submit(self._fetch_single_day, d): d for d in date_list}
                 for future in concurrent.futures.as_completed(future_to_date):
@@ -138,9 +104,8 @@ class GarminClient:
                         if record:
                             results[d] = record
                     except Exception as e:
-                        print(f"\nWarning: Failed fetching data for {d}: {e}")
-                    completed += 1
-                    _print_progress(completed, days_count)
+                        tqdm.write(f"Warning: Failed fetching data for {d}: {e}")
+                    pbar.update(1)
 
         # Return in ascending chronological order
         return [results[d] for d in date_list if d in results]
