@@ -4,16 +4,6 @@ This app lets you download health and activity data from your Garmin device and 
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
-> **⚠️ Important Notice (March 2026)**  
-> Garmin changed their authentication system and added Cloudflare TLS fingerprinting.  
-> The library this project depends on — [`garth`](https://github.com/matin/garth) — is now **officially deprecated** and no longer works for new logins.  
->  
-> **This project currently does not work** for fresh authentication.  
->  
-> For a working alternative that bypasses the TLS fingerprinting restriction, see:  
-> → [**etweisberg/garmin-connect-mcp**](https://github.com/etweisberg/garmin-connect-mcp)  
-> (routes API calls through a headless Playwright browser)
-
 <img width="4167" height="1766" alt="dfd" src="https://github.com/user-attachments/assets/a8872c6e-e7a6-4954-b23a-d0e5590c2bd1" />
 
 ## Features
