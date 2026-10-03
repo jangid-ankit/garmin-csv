@@ -3,6 +3,9 @@ from collections import OrderedDict
 from datetime import time
 from typing import Any, Dict, List, Optional
 
+from garth import DailySummary
+
+
 def safe_get(data: Any, *keys: str, default: Any = None) -> Any:
     """Traverse nested dictionaries safely."""
     for key in keys:
@@ -22,7 +25,7 @@ def categorize_activity_time(activity_time: time) -> str:
     return "Night"
 
 def transform_activity(activity: Dict[str, Any]) -> Dict[str, Any]:
-    """Transform a single raw Garmin activity record into a clean dictionary."""
+    """Transform a single raw Garmin activity record into a clean dictionary, excluding non-essential fields."""
     start_time_str = activity.get("startTimeLocal", "")
     activity_when = ""
     if start_time_str:
@@ -53,7 +56,8 @@ def transform_activity(activity: Dict[str, Any]) -> Dict[str, Any]:
         "Calories": activity.get("calories"),
         "Mean HR": activity.get("averageHR"),
         "Max HR": activity.get("maxHR"),
-        "Steps": activity.get("steps"),
+        "VO2Max": activity.get("vo2MaxValue"),
+        "Activity Steps": activity.get("steps"),
         "Aerobic TE": activity.get("aerobicTrainingEffect"),
         "Anaerobic TE": activity.get("anaerobicTrainingEffect"),
         "Water Loss": activity.get("waterEstimated"),
@@ -63,6 +67,8 @@ def transform_activity(activity: Dict[str, Any]) -> Dict[str, Any]:
         "Zone 3 Time": activity.get("hrTimeInZone_3"),
         "Zone 4 Time": activity.get("hrTimeInZone_4"),
         "Zone 5 Time": activity.get("hrTimeInZone_5"),
+        "Activity Moderate Intensity Minutes": activity.get("moderateIntensityMinutes"),
+        "Activity Vigorous Intensity Minutes": activity.get("vigorousIntensityMinutes"),
     }
 
 def transform_activities(detailed_activities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -72,7 +78,7 @@ def transform_activities(detailed_activities: List[Dict[str, Any]]) -> List[Dict
 
     activities = [transform_activity(act) for act in detailed_activities]
 
-    # Sort ONCE after transforming, avoiding O(N^2 log N) performance degradation
+    # Sort after transforming
     def parse_sort_key(item: Dict[str, Any]):
         val = item.get("Start Time")
         if val:
@@ -98,8 +104,9 @@ def transform_daily_metrics(
 
     return {
         "Date": str(date_val),
+        "Total Calories": daily_summary.get("totalKilocalories"),
+        "Active Calories": daily_summary.get("activeKilocalories"),
         "Steps": daily_summary.get("totalSteps"),
-        "Calories": daily_summary.get("totalKilocalories"),
         "Body Battery": daily_summary.get("bodyBatteryHighestValue"),
         "Sleep Duration": daily_summary.get("sleepingSeconds"),
         "Sleep Score": safe_get(sleep, "dailySleepDTO", "sleepScores", "overall", "value"),
@@ -108,6 +115,9 @@ def transform_daily_metrics(
         "Sleep REM": safe_get(sleep, "dailySleepDTO", "remSleepSeconds"),
         "Sleep Light": safe_get(sleep, "dailySleepDTO", "lightSleepSeconds"),
         "Sleep Stress": safe_get(sleep, "dailySleepDTO", "avgSleepStress"),
+        "7days avg. RHR": daily_summary.get("lastSevenDaysAvgRestingHeartRate"),
+        "Max avg. HR": daily_summary.get("minAvgHeartRate"),
+        "Min avg. HR": daily_summary.get("maxAvgHeartRate"),
         "RHR": sleep.get("restingHeartRate"),
         "Weekly avg. HRV": safe_get(hrv, "hrvSummary", "weeklyAvg"),
         "HRV Baseline Low": safe_get(hrv, "hrvSummary", "baseline", "balancedLow"),
@@ -115,7 +125,7 @@ def transform_daily_metrics(
         "HRV Status": safe_get(hrv, "hrvSummary", "status"),
         "Moderate Intensity Minutes": daily_summary.get("moderateIntensityMinutes"),
         "Vigorous Intensity Minutes": daily_summary.get("vigorousIntensityMinutes"),
-        "Stress": daily_summary.get("averageStressLevel"),
+        "Avg. Stress": daily_summary.get("averageStressLevel"),
         "Resting Stress": daily_summary.get("restStressDuration"),
         "Low Stress": daily_summary.get("lowStressDuration"),
         "Med Stress": daily_summary.get("mediumStressDuration"),
@@ -153,7 +163,8 @@ def merge_metrics_and_activities(
     if not daily_metrics:
         return []
 
-    activity_by_date = deduplicate_activities_by_day(activities)
+    # activity_by_date = deduplicate_activities_by_day(activities)
+    activity_by_date = activities
 
     merged_data: List[Dict[str, Any]] = []
     all_fieldnames: OrderedDict = OrderedDict()

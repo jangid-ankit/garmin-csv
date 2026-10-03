@@ -61,7 +61,8 @@ def run_export(
             start_date = start_date or client.registered_date
 
         # Custom start_date is assigned below (to avoid my personal device registration date discrepancy, for normal usage comment out the next line)
-        start_date = datetime.date(2024,12,23)
+        # or better have the user select what device he wants the data to be picked from.
+        start_date = datetime.date(2026,1,1)
         daily_metrics = client.fetch_metrics_range(start_date, end_date, max_workers=workers)
         exporter = CSVExporter(output_path)
         exporter.export(daily_metrics, append=append)
@@ -71,7 +72,8 @@ def run_export(
         start_date = start_date or client.registered_date
 
         # Custom start_date is assigned below (to avoid my personal device registration date discrepancy, for normal usage comment out the next line)
-        start_date = datetime.date(2024,12,23)
+        # start_date = datetime.date(2024,12,23)
+        start_date = datetime.date(2026,1,1)
         
         daily_metrics = client.fetch_metrics_range(start_date, end_date, max_workers=workers)
         raw_activities = client.fetch_raw_activities()
@@ -137,7 +139,7 @@ Examples:
   python main.py --mode all                # Export all metrics merged with activities
   python main.py --mode activities         # Export activities only
   python main.py --mode metrics --days 30  # Export health metrics for the past 30 days
-  python main.py --mode metrics --append   # Incrementally append latest metrics
+  python main.py --mode metrics --append   # Incrementally append latest metrics (requires existing CSV)
         """,
     )
 
