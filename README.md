@@ -12,7 +12,8 @@ Garmin gives you a lot of data, but the useful insights are often hidden across 
 - **Activity Tracking**: Detailed activity metrics, zone times, training load, and automatic time-of-day categorization (Morning, Afternoon, Evening, Night).
 - **Fast Concurrent Fetching**: Multi-threaded querying fetches months of daily data in seconds.
 - **Interactive Menu & CLI**: Run without arguments for an interactive menu, or use command-line flags.
-- **Clean Export**: Saves structured data cleanly into `output/` with support for incremental appending.
+- **Clean Export**: Saves structured data cleanly into `output/` with support for CSV and SQLite formats.
+- **SQLite Database Support**: Export all 3 datasets (`activities`, `metrics`, `all_data`) to SQLite with primary keys, and perform incremental updates with automatic delta detection.
 
 ## Requirements
 - Python 3.8+
@@ -50,26 +51,39 @@ Simply run without arguments to get an interactive menu:
 ```bash
 python main.py
 ```
+Options include:
+- `1` to `5`: Export or append CSV data (All data, Activities, or Health metrics).
+- `6`: **Export all data to SQLite database** (`activities`, `metrics`, and `all_data` tables).
+- `7`: **Update existing SQLite database** (detects latest recorded date, fetches only missing delta, and upserts).
 
 **CLI Flags:**
 ```bash
-# Export all daily metrics merged with primary activities
+# Export all daily metrics merged with primary activities to CSV
 python main.py --mode all
 
-# Export activities only
+# Export activities only to CSV
 python main.py --mode activities
 
-# Export health metrics for the past 30 days
+# Export health metrics for the past 30 days to CSV
 python main.py --mode metrics --days 30
 
 # Incrementally append latest metrics to existing CSV
 python main.py --mode metrics --append
 
+# Export 3 tables to SQLite database (default: output/garmin_data.db)
+python main.py --sqlite-export
+
+# Check & incrementally update existing SQLite database
+python main.py --sqlite-update
+
+# Custom SQLite database path
+python main.py --sqlite-update --db-path my_database.db
+
 # Custom date range and output file
 python main.py --mode metrics --start-date 2025-01-01 --end-date 2025-06-30 --output my_data.csv
 ```
 
-The exported CSV can be fed directly into an LLM or analysis script for descriptive analysis and insight generation.
+The exported CSV or SQLite database can be queried directly with SQL, fed into an LLM, or used in analysis dashboards.
 
 <br>
 

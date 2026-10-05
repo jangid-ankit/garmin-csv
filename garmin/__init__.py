@@ -1,6 +1,7 @@
 from garmin.auth import authenticate, AuthenticationError
 from garmin.client import GarminClient
 from garmin.exporters import CSVExporter, get_last_recorded_date
+from garmin.sqlite_exporter import SQLiteExporter
 from garmin.transformers import (
     transform_activity,
     transform_activities,
@@ -14,6 +15,7 @@ __all__ = [
     "AuthenticationError",
     "GarminClient",
     "CSVExporter",
+    "SQLiteExporter",
     "get_last_recorded_date",
     "transform_activity",
     "transform_activities",

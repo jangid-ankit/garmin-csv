@@ -7,6 +7,7 @@ from typing import Optional
 from garmin.auth import authenticate, AuthenticationError
 from garmin.client import GarminClient
 from garmin.exporters import CSVExporter, get_last_recorded_date
+from garmin.sqlite_exporter import SQLiteExporter
 from garmin.transformers import (
     transform_activities,
     merge_metrics_and_activities,
@@ -62,7 +63,7 @@ def run_export(
 
         # Custom start_date is assigned below (to avoid my personal device registration date discrepancy, for normal usage comment out the next line)
         # or better have the user select what device he wants the data to be picked from.
-        start_date = datetime.date(2026,1,1)
+        start_date = datetime.date(2024,12,23)
         daily_metrics = client.fetch_metrics_range(start_date, end_date, max_workers=workers)
         exporter = CSVExporter(output_path)
         exporter.export(daily_metrics, append=append)
@@ -72,8 +73,7 @@ def run_export(
         start_date = start_date or client.registered_date
 
         # Custom start_date is assigned below (to avoid my personal device registration date discrepancy, for normal usage comment out the next line)
-        # start_date = datetime.date(2024,12,23)
-        start_date = datetime.date(2026,1,1)
+        start_date = datetime.date(2024,12,23)
         
         daily_metrics = client.fetch_metrics_range(start_date, end_date, max_workers=workers)
         raw_activities = client.fetch_raw_activities()
@@ -87,6 +87,109 @@ def run_export(
         sys.exit(1)
 
 
+def run_sqlite_export(
+    db_path: str = "output/garmin_data.db",
+    start_date: Optional[datetime.date] = None,
+    end_date: Optional[datetime.date] = None,
+    workers: int = 5,
+) -> None:
+    """Exports 3 tables (activities, metrics, all_data) to a SQLite database."""
+    try:
+        authenticate()
+    except AuthenticationError as e:
+        print(f"\nAuthentication Error: {e}")
+        sys.exit(1)
+
+    client = GarminClient()
+    client.connect_device()
+
+    today = datetime.date.today()
+    end_date = end_date or today
+    if start_date is None:
+        start_date = datetime.date(2024, 12, 23)
+
+    print(f"\nTarget SQLite Database: {db_path}")
+    print(f"--- Fetching Data for SQLite Export ({start_date} to {end_date}) ---")
+
+    daily_metrics = client.fetch_metrics_range(start_date, end_date, max_workers=workers)
+    raw_activities = client.fetch_raw_activities()
+    activities = transform_activities(raw_activities)
+    merged = merge_metrics_and_activities(daily_metrics, activities)
+
+    print(f"\n--- Exporting to SQLite Database ({db_path}) ---")
+    exporter = SQLiteExporter(db_path)
+    results = exporter.export_all(activities=activities, metrics=daily_metrics, all_data=merged)
+
+    print(f"✓ Table 'activities': {results.get('activities', 0)} records inserted.")
+    print(f"✓ Table 'metrics':    {results.get('metrics', 0)} records inserted.")
+    print(f"✓ Table 'all_data':   {results.get('all_data', 0)} records inserted.")
+    print(f"\nExport complete! Database saved to: {os.path.abspath(db_path)}")
+
+
+def run_sqlite_update(
+    db_path: str = "output/garmin_data.db",
+    workers: int = 5,
+) -> None:
+    """
+    Checks an existing SQLite database, determines missing date range,
+    and fetches & upserts only the delta into all 3 tables.
+    """
+    exporter = SQLiteExporter(db_path)
+    if not exporter.db_exists():
+        print(f"\nNotice: SQLite database not found at '{db_path}'.")
+        choice = input("Would you like to perform a full initial export? [y/N]: ").strip().lower()
+        if choice == "y":
+            run_sqlite_export(db_path=db_path, workers=workers)
+        return
+
+    latest_date = exporter.get_latest_metric_date()
+    today = datetime.date.today()
+
+    if latest_date is None:
+        print(f"\nNotice: No health metric records found in '{db_path}'. Performing full export...")
+        run_sqlite_export(db_path=db_path, workers=workers)
+        return
+
+    days_delta = (today - latest_date).days
+    print(f"\n--- Checking SQLite Database: {db_path} ---")
+    print(f"Latest metric recorded: {latest_date}")
+    print(f"Current date:           {today}")
+
+    if days_delta <= 0:
+        print(f"✓ Database is already up to date through {latest_date}! No new health metrics to fetch.")
+        choice = input("Check for recent activities anyway? [y/N]: ").strip().lower()
+        if choice != "y":
+            return
+        fetch_start = latest_date
+    else:
+        # Re-fetch starting from latest_date to refresh potentially incomplete day metrics
+        fetch_start = latest_date
+        days_to_fetch = (today - fetch_start).days + 1
+        print(f"Fetching {days_to_fetch} day(s) of data ({fetch_start} to {today}) to update database...")
+
+    try:
+        authenticate()
+    except AuthenticationError as e:
+        print(f"\nAuthentication Error: {e}")
+        sys.exit(1)
+
+    client = GarminClient()
+    client.connect_device()
+
+    daily_metrics = client.fetch_metrics_range(fetch_start, today, max_workers=workers)
+    raw_activities = client.fetch_raw_activities()
+    activities = transform_activities(raw_activities)
+    merged = merge_metrics_and_activities(daily_metrics, activities)
+
+    print(f"\n--- Updating SQLite Database ({db_path}) ---")
+    results = exporter.export_all(activities=activities, metrics=daily_metrics, all_data=merged)
+
+    print(f"✓ Table 'activities': {results.get('activities', 0)} records upserted.")
+    print(f"✓ Table 'metrics':    {results.get('metrics', 0)} records upserted.")
+    print(f"✓ Table 'all_data':   {results.get('all_data', 0)} records upserted.")
+    print(f"\nUpdate complete! Database {db_path} is now up to date through {today}.")
+
+
 def interactive_menu():
     """Provides a friendly interactive CLI menu when no arguments are passed."""
     print("=" * 50)
@@ -97,10 +200,12 @@ def interactive_menu():
     print("3) Health Metrics Only (All available history)")
     print("4) Health Metrics Only (Recent 30 days)")
     print("5) Append Latest Health Metrics to existing CSV")
+    print("6) Export all data to SQLite database")
+    print("7) Update existing SQLite database")
     print("q) Exit")
     print("-" * 50)
 
-    choice = input("Select an option [1-5, q]: ").strip().lower()
+    choice = input("Select an option [1-7, q]: ").strip().lower()
 
     if choice == "1":
         run_export(mode="all")
@@ -113,6 +218,12 @@ def interactive_menu():
         run_export(mode="metrics", start_date=start)
     elif choice == "5":
         run_export(mode="metrics", append=True)
+    elif choice == "6":
+        db_input = input("Enter SQLite DB path [default: output/garmin_data.db]: ").strip()
+        run_sqlite_export(db_path=db_input or "output/garmin_data.db")
+    elif choice == "7":
+        db_input = input("Enter SQLite DB path [default: output/garmin_data.db]: ").strip()
+        run_sqlite_update(db_path=db_input or "output/garmin_data.db")
     elif choice == "q":
         print("Goodbye.")
         sys.exit(0)
@@ -131,22 +242,40 @@ def parse_date(date_str: str) -> datetime.date:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Export Garmin health metrics and activities to clean CSV files.",
+        description="Export Garmin health metrics and activities to clean CSV or SQLite files.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python main.py                           # Launch interactive menu
-  python main.py --mode all                # Export all metrics merged with activities
-  python main.py --mode activities         # Export activities only
-  python main.py --mode metrics --days 30  # Export health metrics for the past 30 days
-  python main.py --mode metrics --append   # Incrementally append latest metrics (requires existing CSV)
+  python main.py --mode all                # Export all metrics merged with activities to CSV
+  python main.py --mode activities         # Export activities only to CSV
+  python main.py --mode metrics --days 30  # Export health metrics for the past 30 days to CSV
+  python main.py --mode metrics --append   # Incrementally append latest metrics to existing CSV
+  python main.py --sqlite-export           # Export 3 tables to SQLite database
+  python main.py --sqlite-update           # Check & incrementally update SQLite database
         """,
     )
 
     parser.add_argument(
         "-m", "--mode",
-        choices=["all", "activities", "metrics"],
-        help="Data type to export: 'all' (merged), 'activities', or 'metrics'.",
+        choices=["all", "activities", "metrics", "sqlite-export", "sqlite-update"],
+        help="Data type to export: 'all' (merged), 'activities', 'metrics', 'sqlite-export', or 'sqlite-update'.",
+    )
+    parser.add_argument(
+        "--sqlite-export",
+        action="store_true",
+        help="Export activities, metrics, and all_data into SQLite database.",
+    )
+    parser.add_argument(
+        "--sqlite-update",
+        action="store_true",
+        help="Check and incrementally update an existing SQLite database.",
+    )
+    parser.add_argument(
+        "--db-path",
+        type=str,
+        default="output/garmin_data.db",
+        help="Custom SQLite database path (default: output/garmin_data.db).",
     )
     parser.add_argument(
         "-d", "--days",
@@ -166,7 +295,7 @@ Examples:
     parser.add_argument(
         "-o", "--output",
         type=str,
-        help="Custom destination CSV path. Defaults to output/<mode>.csv.",
+        help="Custom destination file path. Defaults to output/<mode>.csv or output/garmin_data.db.",
     )
     parser.add_argument(
         "-a", "--append",
@@ -190,6 +319,24 @@ Examples:
     start_date = args.start_date
     if args.days:
         start_date = datetime.date.today() - datetime.timedelta(days=args.days)
+
+    # Route SQLite commands
+    target_db = args.db_path or args.output or "output/garmin_data.db"
+    if args.sqlite_export or args.mode == "sqlite-export":
+        run_sqlite_export(
+            db_path=target_db,
+            start_date=start_date,
+            end_date=args.end_date,
+            workers=args.workers,
+        )
+        return
+
+    if args.sqlite_update or args.mode == "sqlite-update":
+        run_sqlite_update(
+            db_path=target_db,
+            workers=args.workers,
+        )
+        return
 
     mode = args.mode or "all"
     run_export(
