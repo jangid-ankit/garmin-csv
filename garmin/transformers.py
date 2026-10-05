@@ -56,7 +56,7 @@ def transform_activity(activity: Dict[str, Any]) -> Dict[str, Any]:
         "Calories": activity.get("calories"),
         "Mean HR": activity.get("averageHR"),
         "Max HR": activity.get("maxHR"),
-        "VO2Max": activity.get("vo2MaxValue"),
+        "VO2Max": activity.get("vO2MaxValue"),
         "Activity Steps": activity.get("steps"),
         "Aerobic TE": activity.get("aerobicTrainingEffect"),
         "Anaerobic TE": activity.get("anaerobicTrainingEffect"),
